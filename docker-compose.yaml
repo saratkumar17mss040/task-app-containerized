@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: task-manager-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: taskmanager
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - task-manager-network
+
+    # Seed database (runs once and exits)
+
+  seed:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: task-manager-seed
+    command: node seed.js
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/taskmanager
+    depends_on:
+      mongodb:
+        condition: service_started
+    networks:
+      - task-manager-network
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: task-manager-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongodb:27017/taskmanager
+      - JWT_SECRET=your-secret-key-change-in-production
+    depends_on:
+      - mongodb
+    networks:
+      - task-manager-network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: task-manager-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - task-manager-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  task-manager-network:
+    driver: bridge
