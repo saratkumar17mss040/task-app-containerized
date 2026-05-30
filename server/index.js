@@ -23,7 +23,7 @@ app.use(morgan("dev"));
 
 // Database connection
 mongoose
-  .connect(process.env.MONGODB_URI, {
+  .connect(process.env.MONGO_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
